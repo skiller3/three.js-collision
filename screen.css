@@ -1,0 +1,21 @@
+/**
+ * screen.css
+ *
+ * Nate Beatty | May 9, 2014
+ *
+ * This file contains all of the CSS styles for the Three.JS collider demo.
+ * The WebGL 'canvas' will be rendered within the `canvas` DOM element.
+ */
+
+body {
+  font-family: monospace;
+  background-color: #f0f0f0;
+  margin: 0px;
+  padding: 0px;
+  overflow: hidden;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+}
