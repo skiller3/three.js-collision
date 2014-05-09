@@ -20,7 +20,7 @@ function init() {
   scene.fog = new THREE.FogExp2(0xD6F1FF, 0.0025);
 
   camera = new THREE.PerspectiveCamera(60, aspect, 1, 10000); // FOV, Aspect, Near, Far
-  camera.position.y = 50;
+  camera.position.y = 55;
   scene.add(camera);
 
   controls = new THREE.KeyControls(camera);
@@ -48,6 +48,18 @@ function buildScene() {
     })
   );
   scene.add(floor);
+
+  // Import the shed
+  var manager = new THREE.LoadingManager();
+  manager.onProgress = function ( item, loaded, total ) {
+    console.log( item, loaded, total );
+  };
+  var loader = new THREE.OBJLoader(manager);
+  loader.load(assetpath, function(object) {
+    object.position.y = 10;
+    object.position.x = 250;
+    scene.add(object);
+  });
 
   // Add the lighting
   var directionalLight1 = new THREE.DirectionalLight(0xF7EFBE, 0.7);

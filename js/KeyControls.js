@@ -105,11 +105,11 @@ THREE.KeyControls = function(object, domElement) {
 
       case 38:
         /*up*/
-        this.pitchUp = true;
+        this.translateForward = true;
         break;
       case 40:
         /*down*/
-        this.pitchDown = true;
+        this.translateBackward = true;
         break;
 
       case 37:
@@ -118,7 +118,7 @@ THREE.KeyControls = function(object, domElement) {
         break;
       case 81:
         /*Q*/
-        this.panLeft = true;
+        this.yawLeft = true;
         break;
       case 39:
         /*right*/
@@ -126,7 +126,7 @@ THREE.KeyControls = function(object, domElement) {
         break;
       case 69:
         /*E*/
-        this.panRight = true;
+        this.yawRight = true;
         break;
 
       case 27:
@@ -162,11 +162,11 @@ THREE.KeyControls = function(object, domElement) {
 
       case 38:
         /*up*/
-        this.pitchUp = false;
+        this.translateForward = false;
         break;
       case 40:
         /*down*/
-        this.pitchDown = false;
+        this.translateBackward = false;
         break;
 
       case 37:
@@ -175,7 +175,7 @@ THREE.KeyControls = function(object, domElement) {
         break;
       case 81:
         /*Q*/
-        this.panLeft = false;
+        this.yawLeft = false;
         break;
       case 39:
         /*right*/
@@ -183,7 +183,7 @@ THREE.KeyControls = function(object, domElement) {
         break;
       case 69:
         /*E*/
-        this.panRight = false;
+        this.yawRight = false;
         break;
 
       case 27:
@@ -207,6 +207,8 @@ THREE.KeyControls = function(object, domElement) {
 
     // ** translation movement **
     // --------------------------
+
+    // This is where you could determine whether a player will collide if translation movement occurs.
 
     // z-axis movement (forward / backward)
     if (this.translateForward) this.object.translateZ(-translationSpeed);
