@@ -78,7 +78,7 @@ function animate() {
 }
 
 function render() {
-  controls.update(clock.getDelta());
+  controls.updateView(clock.getDelta());
 
   // Repaint the scene
   renderer.render(scene, camera);

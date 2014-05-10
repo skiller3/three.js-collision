@@ -21,8 +21,8 @@
  * @param {element} [element=document] domElement The DOM element in which the
  *     scene is rendered.
  */
-THREE.KeyControls = function(object, domElement) {
-  this.object = object;
+THREE.KeyControls = function(camera, domElement) {
+  this.camera = camera;
   this.target = new THREE.Vector3(0, 0, 0);
 
   this.domElement = (domElement !== undefined) ? domElement : document;
@@ -75,6 +75,13 @@ THREE.KeyControls = function(object, domElement) {
   this.yawLeft = false;
   this.pitchUp = false;
   this.pitchDown = false;
+  
+  /**
+   * The distance from an object at which we consider a collision to have
+   * occurred.
+   * @const {number}
+   */ 
+  this.collisionMargin = 5;
 
   // prevent document from being selected with tab
   if (this.domElement !== document) this.domElement.setAttribute('tabindex', -1);
@@ -185,7 +192,6 @@ THREE.KeyControls = function(object, domElement) {
         /*E*/
         this.yawRight = false;
         break;
-
       case 27:
         /*esc*/
         this.freeze = !this.freeze;
@@ -196,33 +202,80 @@ THREE.KeyControls = function(object, domElement) {
 
   /**
    * @private
-   * @function update
+   * @function translateView
    * @param timeDelta {number} The time elapsed since the last time the
    *     screen was rendered. This time difference is used to calculate the
    *     camera position change from frame to frame.
-   *
+   * 
    */
-  this.update = function(timeDelta) {
+  this.translateView = function(timeDelta) {
     var translationSpeed = timeDelta * this.movementSpeed;
-
-    // ** translation movement **
-    // --------------------------
-
-    // This is where you could determine whether a player will collide if translation movement occurs.
-
+    
     // z-axis movement (forward / backward)
-    if (this.translateForward) this.object.translateZ(-translationSpeed);
-    if (this.translateBackward) this.object.translateZ(translationSpeed);
-
-    // x-axis movement (horizontal)
-    if (this.translateLeft) this.object.translateX(-translationSpeed);
-    if (this.translateRight) this.object.translateX(translationSpeed);
-
-    // y-axis movement (vertical)
-
-    // ** rotational movement (camera target) **
-    // -----------------------------------------
-
+    if (this.translateForward) this.translateViewZ(true, translationSpeed);
+    if (this.translateBackward) this.translateViewZ(false, translationSpeed);
+    
+    // x-axis movement (left / right)
+    if (this.translateLeft) this.translateViewX(false, translationSpeed);
+    if (this.translateRight) this.translateViewX(true, translationSpeed);
+  };
+  
+  var getCollideableObjects = function() {
+    // This code assumes all objects for which we want to detect collisons
+    // are of type Mesh or Object3D.  This may not be true if additional
+    // types of children are added to the scene...
+    return scene.children.filter(function(child) {
+        return child instanceof THREE.Mesh || child instanceof THREE.Object3D;
+    });
+  };
+  
+  /**
+   * @private
+   * @function translateViewZ
+   * @param forward {boolean} Is the camera translation backward or forward?
+   * @param units {number} The distance being translated.
+   */
+  this.translateViewZ = function(forward, units) {
+    var cameraDirVector = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion),
+        modelObjects = getCollideableObjects(),
+        directionVector = forward ? cameraDirVector : cameraDirVector.clone().multiplyScalar(-1),
+        raycaster = new THREE.Raycaster(this.camera.position, directionVector, 0, units + this.collisionMargin),
+        intersections = raycaster.intersectObjects(modelObjects, true);
+        
+    if (intersections.length < 1) {
+        this.camera.translateZ((forward ? -1 : 1) * units);
+    }
+  }
+  
+  /**
+   * @private
+   * @function translateViewX
+   * @param right {boolean} Is the camera translation left or right?
+   * @param units {number} The distance being translated.
+   * 
+   */
+  this.translateViewX = function(right, units) {
+    var cameraDirVector = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion),
+        modelObjects = getCollideableObjects(),
+        upVector = new THREE.Vector3(0, 1, 0),
+        directionVector = right ? cameraDirVector.clone().cross(upVector) : upVector.clone().cross(cameraDirVector),
+        raycaster = new THREE.Raycaster(this.camera.position, directionVector, 0, units + this.collisionMargin),
+        intersections = raycaster.intersectObjects(modelObjects, true);
+        
+    if (intersections.length < 1) {
+        this.camera.translateX((right ? 1 : -1) * units);
+    }
+  }
+  
+  /**
+   * @private
+   * @function rotateView
+   * @param timeDelta {number} The time elapsed since the last time the
+   *     screen was rendered. This time difference is used to calculate the
+   *     camera position change from frame to frame.
+   * 
+   */
+  this.rotateView = function(timeDelta) {
     var actualLookSpeed = this.lookSpeed; // temporary hack
 
     // execute simple stepwise rotation
@@ -240,18 +293,29 @@ THREE.KeyControls = function(object, domElement) {
 
     // complete all rotation by pointing the camera
     var targetPosition = this.target,
-      position = this.object.position;
+        position = this.camera.position;
 
     var distanceAhead = 100;
-    targetPosition.x = position.x + distanceAhead * Math.sin(this.phi) * Math.cos(
-      this.theta);
+    targetPosition.x = position.x + distanceAhead * Math.sin(this.phi) * Math.cos(this.theta);
     targetPosition.y = position.y + distanceAhead * Math.cos(this.phi);
-    targetPosition.z = position.z + distanceAhead * Math.sin(this.phi) * Math.sin(
-      this.theta);
+    targetPosition.z = position.z + distanceAhead * Math.sin(this.phi) * Math.sin(this.theta);
 
-    this.object.lookAt(targetPosition);
+    this.camera.lookAt(targetPosition);
   };
 
+  /**
+   * @private
+   * @function updateView
+   * @param timeDelta {number} The time elapsed since the last time the
+   *     screen was rendered. This time difference is used to calculate the
+   *     camera position change from frame to frame.
+   *
+   */
+  this.updateView = function(timeDelta) {
+    this.translateView(timeDelta);
+    this.rotateView(timeDelta);
+  };
+  
   window.addEventListener('keydown', bind(this, this.onKeyDown), false);
   window.addEventListener('keyup', bind(this, this.onKeyUp), false);
 
